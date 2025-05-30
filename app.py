@@ -83,6 +83,22 @@ if st.button("분석 실행"):
             strategy = strategy_prompt(symbol, rsi_val, macd_desc)
             gpt_response = ask_gpt(strategy)
 
+            with st.expander(f"📌 {symbol} 분석 결과 보기"):
+                st.markdown(f"**RSI 상태**: {rsi_status(rsi_val)}")
+                st.markdown(f"**MACD 상태**: {macd_status(macd_desc)}")
+                st.markdown(f"**전략 문장**: {strategy}")
+                st.markdown(f"**GPT 전략 제안**: {gpt_response}")
+
+                # RSI 차트 시각화
+                fig, ax = plt.subplots()
+                ax.plot(rsi_series, label="RSI", color="blue")
+                ax.axhline(70, color='red', linestyle='--', linewidth=1)
+                ax.axhline(30, color='green', linestyle='--', linewidth=1)
+                ax.set_title(f"{symbol} RSI (Wilder 방식)")
+                ax.set_ylabel("RSI")
+                ax.legend()
+                st.pyplot(fig)
+
             results.append({
                 'ETF': symbol,
                 'RSI': rsi_val,
@@ -98,28 +114,9 @@ if st.button("분석 실행"):
                 'GPT 전략 제안': gpt_response
             })
 
-            # RSI 차트 시각화 추가
-            st.subheader(f"📈 {symbol} RSI 차트")
-            fig, ax = plt.subplots()
-            ax.plot(rsi_series, label="RSI", color="blue")
-            ax.axhline(70, color='red', linestyle='--', linewidth=1)
-            ax.axhline(30, color='green', linestyle='--', linewidth=1)
-            ax.set_title(f"{symbol} RSI (Wilder 방식)")
-            ax.set_ylabel("RSI")
-            ax.legend()
-            st.pyplot(fig)
-
-            # MACD 차트 추가
-            st.subheader(f"📉 {symbol} MACD 차트")
-            fig2, ax2 = plt.subplots()
-            ax2.plot(macd, label='MACD', color='purple')
-            ax2.plot(signal, label='Signal', color='orange')
-            ax2.set_title(f"{symbol} MACD")
-            ax2.legend()
-            st.pyplot(fig2)
-
         except Exception as e:
             st.error(f"{symbol} 분석 중 오류 발생: {e}")
 
     df = pd.DataFrame(results)
+    st.subheader("📋 분석 요약 테이블")
     st.dataframe(df)
