@@ -1,5 +1,7 @@
-streamlit>=1.12.0
+
+streamlit>=1.10.0
 yfinance
-openai
 pandas
+numpy
+openai
 matplotlib
