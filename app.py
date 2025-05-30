@@ -1,5 +1,5 @@
 # 카드형 2단 UI
-cols = st.beta_columns(2)
+st.columns(2)
 
 for idx, symbol in enumerate(etfs):
     try:
