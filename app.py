@@ -109,6 +109,15 @@ if st.button("분석 실행"):
             ax.legend()
             st.pyplot(fig)
 
+            # MACD 차트 추가
+            st.subheader(f"📉 {symbol} MACD 차트")
+            fig2, ax2 = plt.subplots()
+            ax2.plot(macd, label='MACD', color='purple')
+            ax2.plot(signal, label='Signal', color='orange')
+            ax2.set_title(f"{symbol} MACD")
+            ax2.legend()
+            st.pyplot(fig2)
+
         except Exception as e:
             st.error(f"{symbol} 분석 중 오류 발생: {e}")
 
