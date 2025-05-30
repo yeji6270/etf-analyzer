@@ -1,7 +1,8 @@
-
-streamlit>=1.10.0
-yfinance
+streamlit
 pandas
 numpy
+yfinance
 openai
 matplotlib
+
+# update trigger
