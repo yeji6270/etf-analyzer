@@ -1,6 +1,6 @@
 streamlit
+openai>=1.0.0
 pandas
-yfinance
 numpy
+yfinance
 matplotlib
-openai
