@@ -1,26 +1,25 @@
+
 import streamlit as st
 import pandas as pd
 import yfinance as yf
 import numpy as np
 import datetime
-import matplotlib.pyplot as plt
 import openai
+import matplotlib.pyplot as plt
 
 # OpenAI API 키 설정
-openai.api_key = st.secrets["openai_api_key"]
+openai.api_key = st.secrets["openai_api_key"] if "openai_api_key" in st.secrets else "YOUR_API_KEY"
 
-# RSI 계산 함수 (Wilder 방식)
+# RSI 계산 (Wilder 방식)
 def calculate_wilder_rsi(close, period=14):
     delta = close.diff()
     gain = delta.where(delta > 0, 0.0)
     loss = -delta.where(delta < 0, 0.0)
-    avg_gain = gain.rolling(window=period).mean()
-    avg_loss = loss.rolling(window=period).mean()
-
+    avg_gain = gain.rolling(window=period, min_periods=period).mean()
+    avg_loss = loss.rolling(window=period, min_periods=period).mean()
     for i in range(period, len(gain)):
-        avg_gain.iloc[i] = (avg_gain.iloc[i-1] * (period - 1) + gain.iloc[i]) / period
-        avg_loss.iloc[i] = (avg_loss.iloc[i-1] * (period - 1) + loss.iloc[i]) / period
-
+        avg_gain.iloc[i] = (avg_gain.iloc[i - 1] * (period - 1) + gain.iloc[i]) / period
+        avg_loss.iloc[i] = (avg_loss.iloc[i - 1] * (period - 1) + loss.iloc[i]) / period
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
     return rsi
@@ -50,9 +49,9 @@ def ask_gpt(prompt):
     except Exception as e:
         return f"GPT 오류: {e}"
 
+# Streamlit 앱 UI 구성
 st.set_page_config(page_title="ETF 기술적 분석 앱", page_icon="📊")
 st.title("📊 ETF 기술적 분석 앱")
-
 etf_input = st.text_input("ETF 심볼을 입력하세요 (쉼표로 구분)", "QQQ, QLD, BITO")
 etfs = [etf.strip().upper() for etf in etf_input.split(",") if etf.strip()]
 
@@ -62,10 +61,10 @@ if st.button("분석 실행"):
             ticker = yf.Ticker(symbol)
             hist = ticker.history(period="1y")
             close = hist['Close']
-            current_price = round(close.iloc[-1], 2)
 
             rsi_series = calculate_wilder_rsi(close)
             rsi_val = round(rsi_series.dropna().iloc[-1], 1)
+            latest_price = round(close.iloc[-1], 2)
 
             ema12 = close.ewm(span=12, adjust=False).mean()
             ema26 = close.ewm(span=26, adjust=False).mean()
@@ -80,31 +79,34 @@ if st.button("분석 실행"):
             boll_upper = round(sma20 + 2 * std, 1)
             boll_lower = round(sma20 - 2 * std, 1)
 
-            st.subheader(f"{symbol}")
-            st.markdown(f"💵 **현재가:** ${current_price}")
-            st.markdown(f"📈 **RSI:** {rsi_val} ({rsi_status(rsi_val)})")
-            st.markdown(f"📉 **MACD:** {macd_desc} ({macd_status(macd_desc)})")
-            st.markdown(f"🧮 **SMA20:** {sma20}, **SMA50:** {sma50}, **SMA200:** {sma200}")
-            st.markdown(f"📊 **볼린저 밴드:** 상단 {boll_upper}, 하단 {boll_lower}")
-            st.markdown(f"💬 **전략 문장 복사용:**
-`{strategy_prompt(symbol, rsi_val, macd_desc)}`")
+            strategy = strategy_prompt(symbol, rsi_val, macd_desc)
 
-            show_gpt = st.button(f"{symbol} 전략 확인하기")
-            if show_gpt:
-                gpt_response = ask_gpt(strategy_prompt(symbol, rsi_val, macd_desc))
-                st.markdown("💡 **GPT 전략 제안**")
-                st.write(gpt_response)
+            with st.container():
+                st.markdown(f"### {symbol}")
+                st.markdown(f"💰 **현재가:** ${latest_price}")
+                st.markdown(f"📊 **RSI:** {rsi_val} ({rsi_status(rsi_val)})")
+                st.markdown(f"🔀 **MACD:** {macd_desc} ({macd_status(macd_desc)})")
+                st.markdown(f"🧮 **SMA20 / SMA50 / SMA200:** {sma20} / {sma50} / {sma200}")
+                st.markdown(f"📉 **볼린저밴드:** 상단 {boll_upper}, 하단 {boll_lower}")
+                st.markdown(f"💬 **전략 문장 복사용:** `{strategy}`")
 
-            fig, ax = plt.subplots()
-            ax.plot(rsi_series, label="RSI", color="#61dafb")
-            ax.axhline(70, color='red', linestyle='--', linewidth=1)
-            ax.axhline(30, color='green', linestyle='--', linewidth=1)
-            ax.set_facecolor("#0e1117")
-            fig.patch.set_facecolor("#0e1117")
-            ax.set_title(f"{symbol} RSI 차트")
-            ax.set_ylabel("RSI")
-            ax.legend()
-            st.pyplot(fig)
+                if st.button(f"{symbol} 전략 확인하기"):
+                    gpt_response = ask_gpt(strategy)
+                    st.markdown(f"💡 **GPT 전략 제안:**
+
+{gpt_response}")
+
+                fig, ax = plt.subplots()
+                ax.plot(rsi_series, label="RSI", color="skyblue")
+                ax.axhline(70, color='red', linestyle='--', linewidth=1)
+                ax.axhline(30, color='green', linestyle='--', linewidth=1)
+                ax.set_title(f"{symbol} RSI 차트", color="white")
+                ax.set_ylabel("RSI")
+                ax.set_facecolor("#111111")
+                fig.patch.set_facecolor('#0e1117')
+                ax.tick_params(colors='white')
+                ax.legend()
+                st.pyplot(fig)
 
         except Exception as e:
             st.error(f"{symbol} 분석 중 오류 발생: {e}")
