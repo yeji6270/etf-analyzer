@@ -4,5 +4,3 @@ numpy
 yfinance
 openai
 matplotlib
-
-# update trigger
