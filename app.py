@@ -94,7 +94,7 @@ if st.button("🔍 분석 실행"):
 
             if st.button(f"{symbol} 전략 확인하기"):
                 response = ask_gpt(prompt)
-                st.markdown(f"💡 **GPT 전략 제안**
+               st.markdown(f"💡 **GPT 전략 제안**\n\n{gpt_response}")
 
 {response}")
 
