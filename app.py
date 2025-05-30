@@ -4,6 +4,7 @@ import yfinance as yf
 import numpy as np
 import datetime
 import openai
+import matplotlib.pyplot as plt
 
 # OpenAI API 설정
 openai.api_key = st.secrets["openai_api_key"] if "openai_api_key" in st.secrets else "YOUR_API_KEY"
@@ -49,6 +50,7 @@ def ask_gpt(prompt):
         return f"GPT 오류: {e}"
 
 # Streamlit 앱 시작
+st.set_page_config(page_title="ETF 분석 앱", page_icon="📈")
 st.title("📊 ETF 기술적 분석 앱")
 
 etf_input = st.text_input("ETF 심볼을 입력하세요 (쉼표로 구분)", "QQQ, QLD, BITO")
@@ -95,6 +97,17 @@ if st.button("분석 실행"):
                 '전략 문장': strategy,
                 'GPT 전략 제안': gpt_response
             })
+
+            # RSI 차트 시각화 추가
+            st.subheader(f"📈 {symbol} RSI 차트")
+            fig, ax = plt.subplots()
+            ax.plot(rsi_series, label="RSI", color="blue")
+            ax.axhline(70, color='red', linestyle='--', linewidth=1)
+            ax.axhline(30, color='green', linestyle='--', linewidth=1)
+            ax.set_title(f"{symbol} RSI (Wilder 방식)")
+            ax.set_ylabel("RSI")
+            ax.legend()
+            st.pyplot(fig)
 
         except Exception as e:
             st.error(f"{symbol} 분석 중 오류 발생: {e}")
